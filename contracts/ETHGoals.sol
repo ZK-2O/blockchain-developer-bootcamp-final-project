@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity 0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -8,6 +8,7 @@ contract ETHGoals is Ownable {
     //Variables and structs
     uint private goalIdCounter = 0;
     uint private minGoalAmount = 0.01 ether;
+    uint private lockedGoalAmount = 0;
     
     struct Goal {
         uint id;
@@ -25,10 +26,8 @@ contract ETHGoals is Ownable {
     
     //Events
     event GoalAdded(uint indexed goalID);
-    
     event GoalCompleted(uint indexed goalID);
-    
-    event GoalAmountReturnedToSender(uint indexed amount);
+    event GoalAmountReturnedToSender(uint amount);
     
     
     
@@ -43,6 +42,12 @@ contract ETHGoals is Ownable {
         require(msg.value >= _minGoalAmount, "Please supply a minimum of 0.01 ETH with your goal");
         _;
     }
+
+    modifier notEmptyDescription(string memory _description) {
+        //Goal description should not be empty
+        require(bytes(_description).length > 0, "Goal description cannot be empty");
+        _;
+    }
     
     modifier futureDeadlineOnly(uint _suppliedDeadline) {
         //Ideally, deadline should be more like 30-60 minutes in the future but keeping at greater than current timestamp for the purpose of quick testing of the project
@@ -50,6 +55,7 @@ contract ETHGoals is Ownable {
         require (_suppliedDeadline >= (block.timestamp), "Supplied deadline must be in the future");
         _;
     }
+
     
     //Functions
     
@@ -62,7 +68,7 @@ contract ETHGoals is Ownable {
             string memory _description,
             //address _accountabilityBuddy, //For future functionality
             uint _deadline
-        ) public payable minimumGoalAmount(minGoalAmount) futureDeadlineOnly(_deadline) {
+        ) public payable minimumGoalAmount(minGoalAmount) futureDeadlineOnly(_deadline) notEmptyDescription(_description) {
             
         //Increase the goalID counter
         goalIdCounter = goalIdCounter + 1;
@@ -78,6 +84,8 @@ contract ETHGoals is Ownable {
             completed: false
         });
         
+        lockedGoalAmount += msg.value;
+
         goalOwners[goalIdCounter] = msg.sender;
         goals[goalIdCounter] = newGoal;
         userGoals[msg.sender].push(goalIdCounter);
@@ -96,21 +104,35 @@ contract ETHGoals is Ownable {
         //      in time and always claim back the full amount.
         //      In the future, when the "accountability buddy" functionality is added, I could add the ability
         //      to specify the completion date manually so the accountability buddy can verify it before the amount is returned to the user.
+        //      This would remove the dependency on the block.timestamp
         
+        //Goal has to be incomplete to be marked as completed
+        require(goals[_goalId].completed == false, "Goal is already marked as complete");
+
+        uint goalAmount = goals[_goalId].amount;
+        goals[_goalId].amount = 0;
+
         goals[_goalId].completed = true; //Mark goal as completed
-        goals[_goalId].completedTimestamp = block.timestamp;
-        emit GoalCompleted(_goalId);
+        goals[_goalId].completedTimestamp = block.timestamp;   
+
+        emit GoalCompleted(_goalId);  
         
         if (goals[_goalId].deadline >= block.timestamp)
         {
-            payable(msg.sender).transfer(goals[_goalId].amount); //Return the amount deposited for the goal back to the owner
+            lockedGoalAmount -= goalAmount;
+
+            (bool success, ) = msg.sender.call{ value: (goalAmount) }(""); //Return the amount deposited for the goal back to the owner
+            require(success, "Transfer failed.");
+            emit GoalAmountReturnedToSender(goalAmount);
         }
         else
         {
-            payable(msg.sender).transfer((goals[_goalId].amount / 2)); //Return half the amount deposited for the goal back to the owner because they completed the goal AFTER the deadline
+            lockedGoalAmount -= goalAmount;                     //We subtract the whole amount instead of half because we want to allow the contract owner to withdraw the unlocked amount in the contract
+
+            (bool success, ) = msg.sender.call{value: (goalAmount / 2)}(""); //Return half the amount deposited for the goal back to the owner because they completed the goal AFTER the deadline
+            require(success, "Transfer failed.");
+            emit GoalAmountReturnedToSender(goalAmount / 2);
         }
-        
-        emit GoalAmountReturnedToSender(goals[_goalId].amount);
     }
     
     /// @notice Retrieve the details for a goal based on the goal ID
@@ -132,9 +154,21 @@ contract ETHGoals is Ownable {
         myGoals = userGoals[msg.sender];
     }
 
+    function getAvailableWithdrawAmount() public view onlyOwner returns (uint withdrawAmount) {
+        withdrawAmount = address(this).balance - lockedGoalAmount;
+    }
+
     /// @notice Allows the contract owner to withdraw the ETH stored in the contract (when users don't complete their goals in time and only 50% of their goal deposit is returned to them)
-    function withdraw() public onlyOwner {
-        payable(owner()).transfer(address(this).balance);
+    function withdraw() external onlyOwner {
+        //To ensure owner can only withdraw the amount of ETH in the contract that is not locked up in goals.
+        uint withdrawAmount = address(this).balance - lockedGoalAmount;
+
+        require(withdrawAmount > 0, "Amount being withdrawn must be greater than zero");
+        require((address(this).balance - lockedGoalAmount) >= withdrawAmount, "Amount being withdrawn must be <= the balance in contract minus locked goal amount");
+
+        address owner = owner();
+        (bool success, ) = owner.call{ value: withdrawAmount }("");
+        require(success, "Withdraw failed");
     }
 
     /*

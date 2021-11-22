@@ -67,6 +67,24 @@ contract("ETHGoals", function (accounts) {
   });
 
 
+  it("should not be able to mark goals as completed more than once", async () => {
+    const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 120; //2 minutes in the future
+    const goalDeposit = web3.utils.toWei("0.5");
+
+    //Add a new goal
+    await instance.addNewGoal("Alice's first goal", currentEpochTime, { from: alice, value: goalDeposit });   
+
+    //Get all goals for Alice (should only be one goal at this point)
+    const aliceGoal = await instance.getMyGoals({ from: alice });
+
+    //Mark the goal completed using the goal ID (which is the value of aliceGoal)
+    await instance.markGoalAsComplete(aliceGoal[0], { from: alice });
+
+    //Try marking the goal as complete again, this should fail
+    await catchRevert(instance.markGoalAsComplete(aliceGoal[0], { from: alice }));
+  });
+
+
   it("should not be able to create a goal with a deadline in the past", async () => {
     const currentEpochTime = Math.floor(new Date().getTime() / 1000) - 120; //2 minutes in the past
     const goalDeposit = web3.utils.toWei("0.5");
@@ -78,6 +96,7 @@ contract("ETHGoals", function (accounts) {
   it("should return full ETH amount when goal is marked as complete before the deadline ", async () => {
     const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 120; //2 minutes in the future
     const goalDeposit = web3.utils.toWei("0.5");
+    const expectedReturnAmount = 0.5;
 
     //Add a new goal for Bob
     await instance.addNewGoal("Bob's first goal", currentEpochTime, { from: bob, value: goalDeposit });   
@@ -93,7 +112,7 @@ contract("ETHGoals", function (accounts) {
     const txInfo = await web3.eth.getTransaction(tx.tx);
 
     //Calculate the total gas used in wei
-    const totalGasUsed = tx.receipt.gasUsed * parseFloat(txInfo.gasPrice);
+    const totalGasUsed = web3.utils.toBN(tx.receipt.gasUsed) * web3.utils.toBN(txInfo.gasPrice);
 
     //Get Bob's balance after the goal is marked completed
     const balanceAfterGoalCompletion = await web3.eth.getBalance(bob);
@@ -104,7 +123,7 @@ contract("ETHGoals", function (accounts) {
     //Check to make sure the full 0.5 ETH is returned
     assert.equal(
       ETHReturned,
-      0.5,
+      expectedReturnAmount,
       "did not receive the full goal amount back"
     );
 
@@ -114,6 +133,7 @@ contract("ETHGoals", function (accounts) {
   it("should return 50% of ETH amount when goal is marked as complete after the deadline ", async () => {
     const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 5; //5 seconds in the future
     const goalDeposit = web3.utils.toWei("0.5");
+    const expectedReturnAmount = 0.25;
 
     //Add a new goal for Carol
     await instance.addNewGoal("Carol's first goal", currentEpochTime, { from: carol, value: goalDeposit });   
@@ -132,7 +152,7 @@ contract("ETHGoals", function (accounts) {
     const txInfo = await web3.eth.getTransaction(tx.tx);
 
     //Calculate the total gas used in wei
-    const totalGasUsed = tx.receipt.gasUsed * parseFloat(txInfo.gasPrice);
+    const totalGasUsed = web3.utils.toBN(tx.receipt.gasUsed) * web3.utils.toBN(txInfo.gasPrice);
 
     //Get Carol's balance after the goal is marked completed
     const balanceAfterGoalCompletion = await web3.eth.getBalance(carol);
@@ -143,7 +163,7 @@ contract("ETHGoals", function (accounts) {
     //Check to make sure that only 0.25 ETH (50% of the original deposited amount) is returned
     assert.equal(
       ETHReturned,
-      0.25,
+      expectedReturnAmount,
       "did not receive 50% of the goal amount back"
     );
   });
@@ -153,9 +173,11 @@ contract("ETHGoals", function (accounts) {
     const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 5; //5 seconds in the future
     const goalDeposit = web3.utils.toWei("0.5");
     const ownerBalBeforeWithdraw = await web3.eth.getBalance(contractOwner);
+    const expectedWithdrawAmount = 0.25;
 
     //Add a new goal for Carol
-    await instance.addNewGoal("Carol's first goal", currentEpochTime, { from: carol, value: goalDeposit });   
+    await instance.addNewGoal("Carol's first goal", currentEpochTime, { from: carol, value: goalDeposit });
+    await instance.addNewGoal("Carol's second goal", currentEpochTime, { from: carol, value: goalDeposit });
 
     const delay = ms => new Promise(res => setTimeout(res, ms));
     await delay(6000); //Wait for 6 seconds
@@ -163,14 +185,18 @@ contract("ETHGoals", function (accounts) {
     //Get Carol's goals
     const carolGoal = await instance.getMyGoals({ from: carol });
     
-    //Mark Carol's goal as completed and stored the tx receipt
+    //Mark Carol's goal as completed and stored the tx receipt - will only return 0.25 to Carol
     await instance.markGoalAsComplete(carolGoal[0], { from: carol });
 
-    const contractBalance = await web3.eth.getBalance(instance.address);
+    //At this point, the contract will have 0.75 ETH remaining. 0.5 of which is locked in goal 2 still so the owner
+    //should only be able to withdraw 0.25 ETH
 
     //Call the withdraw function using the contractOwner account
     const tx = await instance.withdraw({ from: contractOwner });
     const txInfo = await web3.eth.getTransaction(tx.tx);
+
+    // console.log(tx);
+    // console.log(txInfo);
 
     //Calulate total gas used
     const totalGasUsed = tx.receipt.gasUsed * parseFloat(txInfo.gasPrice);
@@ -181,13 +207,19 @@ contract("ETHGoals", function (accounts) {
     //Calculate total ETH withdrawn
     const ETHWithdrawn = parseFloat(web3.utils.fromWei(ownerBalAfterWithdraw.toString(), 'ether')) + parseFloat(web3.utils.fromWei(totalGasUsed.toString(), 'ether')) - parseFloat(web3.utils.fromWei(ownerBalBeforeWithdraw.toString(), 'ether'));
 
+    // console.log(`Contract Balance: ${contractBalance}`);
+    // console.log(`Owner Before Balance: ${ownerBalBeforeWithdraw}`);
+    // console.log(`Owner After Balance: ${ownerBalAfterWithdraw}`);
+    // console.log(`ETH Withdrawn: ${ETHWithdrawn}`);
+
     //Check to make sure that the amount returned to the owner is the same as what was in the contract
     assert.equal(
       ETHWithdrawn,
-      parseFloat(web3.utils.fromWei(contractBalance, "ether")),
-      "did not allow contract owner to withdraw full contract balance"
+      expectedWithdrawAmount,
+      "did not allow contract owner to withdraw the appropriate amount"
     );
   });
+
 
   it("should not allow anyone other than the contract owner to call withdraw function", async () => {
     await catchRevert(instance.withdraw({ from: alice }));
@@ -213,7 +245,6 @@ contract("ETHGoals", function (accounts) {
   });
 
 
-
   it("should not be allowed to mark another user's goal as completed", async () => {
     const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 120; //2 minutes in the future
     const goalDeposit = web3.utils.toWei("0.5");
@@ -227,7 +258,6 @@ contract("ETHGoals", function (accounts) {
     //Attempt to mark Alice's goal as completed using Bob's account
     await catchRevert(instance.getMyGoalById(aliceGoal[0], { from: bob }));
   });
-
 
 
   it("should not be allowed to create a goal with a goal amount of less than 0.01 ETH", async () => {
