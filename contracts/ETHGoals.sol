@@ -27,10 +27,10 @@ contract ETHGoals is Ownable {
     //Events
     event GoalAdded(uint indexed goalID);
     event GoalCompleted(uint indexed goalID);
-    event GoalAmountReturnedToSender(uint amount);
+    event GoalAmountReturnedToSender(address indexed goalOwner, uint amount);
+    event amountWithdrawn(address indexed owner, uint amount);
     
-    
-    
+
     //Modifiers
     modifier onlyGoalOwner(uint _goalId) {
         require(goalOwners[_goalId] == msg.sender, "Only the goal owner can retrieve or make changes to their goals");
@@ -123,7 +123,7 @@ contract ETHGoals is Ownable {
 
             (bool success, ) = msg.sender.call{ value: (goalAmount) }(""); //Return the amount deposited for the goal back to the owner
             require(success, "Transfer failed.");
-            emit GoalAmountReturnedToSender(goalAmount);
+            emit GoalAmountReturnedToSender(msg.sender, goalAmount);
         }
         else
         {
@@ -131,7 +131,7 @@ contract ETHGoals is Ownable {
 
             (bool success, ) = msg.sender.call{value: (goalAmount / 2)}(""); //Return half the amount deposited for the goal back to the owner because they completed the goal AFTER the deadline
             require(success, "Transfer failed.");
-            emit GoalAmountReturnedToSender(goalAmount / 2);
+            emit GoalAmountReturnedToSender(msg.sender, (goalAmount / 2));
         }
     }
     
@@ -169,6 +169,8 @@ contract ETHGoals is Ownable {
         address owner = owner();
         (bool success, ) = owner.call{ value: withdrawAmount }("");
         require(success, "Withdraw failed");
+
+        emit amountWithdrawn(owner, withdrawAmount);
     }
 
     /*

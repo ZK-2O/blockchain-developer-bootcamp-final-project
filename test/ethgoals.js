@@ -96,44 +96,43 @@ contract("ETHGoals", function (accounts) {
   it("should return full ETH amount when goal is marked as complete before the deadline ", async () => {
     const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 120; //2 minutes in the future
     const goalDeposit = web3.utils.toWei("0.5");
-    const expectedReturnAmount = 0.5;
+    const expectedReturnAmount = web3.utils.toWei("0.5");
 
     //Add a new goal for Bob
     await instance.addNewGoal("Bob's first goal", currentEpochTime, { from: bob, value: goalDeposit });   
-
-    //Get the balance after the goal is created - this will be used to calculate whether we get the full deposit back
-    const balanceAfterGoalCreation = await web3.eth.getBalance(bob);
 
     //Get Bob's goals
     const bobGoal = await instance.getMyGoals({ from: bob });
     
     //Mark Bob's goal as completed and stored the tx receipt
     const tx = await instance.markGoalAsComplete(bobGoal[0], { from: bob });
-    const txInfo = await web3.eth.getTransaction(tx.tx);
 
-    //Calculate the total gas used in wei
-    const totalGasUsed = web3.utils.toBN(tx.receipt.gasUsed) * web3.utils.toBN(txInfo.gasPrice);
+    const goalOwner = tx.logs[1].args.goalOwner;
+    const amountReturned = tx.logs[1].args.amount.toString();;
 
-    //Get Bob's balance after the goal is marked completed
-    const balanceAfterGoalCompletion = await web3.eth.getBalance(bob);
+    const expectedEventResult = {
+      accountAddress: bob,
+      amountReturned: expectedReturnAmount
+    };
 
-    //Calculate the total ETH returned (balanceAfterGoalCompletion + gasUsed in the second tx) - balanceAfterGoalCreation
-    const ETHReturned = (parseFloat(web3.utils.fromWei(balanceAfterGoalCompletion.toString(), "ether")) + parseFloat(web3.utils.fromWei(totalGasUsed.toString(), "ether"))) - parseFloat(web3.utils.fromWei(balanceAfterGoalCreation.toString(), "ether"));
-
-    //Check to make sure the full 0.5 ETH is returned
     assert.equal(
-      ETHReturned,
-      expectedReturnAmount,
-      "did not receive the full goal amount back"
+      expectedEventResult.accountAddress,
+      goalOwner,
+      "markGoalAsComplete - incorrect goal owner returned",
     );
 
+    assert.equal(
+      expectedEventResult.amountReturned,
+      amountReturned,
+      "markGoalAsComplete - incorrect goal amount returned",
+    );
   });
 
 
   it("should return 50% of ETH amount when goal is marked as complete after the deadline ", async () => {
     const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 5; //5 seconds in the future
     const goalDeposit = web3.utils.toWei("0.5");
-    const expectedReturnAmount = 0.25;
+    const expectedReturnAmount = web3.utils.toWei("0.25");
 
     //Add a new goal for Carol
     await instance.addNewGoal("Carol's first goal", currentEpochTime, { from: carol, value: goalDeposit });   
@@ -141,30 +140,30 @@ contract("ETHGoals", function (accounts) {
     const delay = ms => new Promise(res => setTimeout(res, ms));
     await delay(6000); //Wait for 6 seconds
 
-    //Get the balance after the goal is created - this will be used to calculate whether we get the full deposit back
-    const balanceAfterGoalCreation = await web3.eth.getBalance(carol);
-
     //Get Carol's goals
     const carolGoal = await instance.getMyGoals({ from: carol });
     
     //Mark Carol's goal as completed and stored the tx receipt
     const tx = await instance.markGoalAsComplete(carolGoal[0], { from: carol });
-    const txInfo = await web3.eth.getTransaction(tx.tx);
 
-    //Calculate the total gas used in wei
-    const totalGasUsed = web3.utils.toBN(tx.receipt.gasUsed) * web3.utils.toBN(txInfo.gasPrice);
+    const goalOwner = tx.logs[1].args.goalOwner;
+    const amountReturned = tx.logs[1].args.amount.toString();;
 
-    //Get Carol's balance after the goal is marked completed
-    const balanceAfterGoalCompletion = await web3.eth.getBalance(carol);
+    const expectedEventResult = {
+      accountAddress: carol,
+      amountReturned: expectedReturnAmount
+    };
 
-    //Calculate the total ETH returned (balanceAfterGoalCompletion + gasUsed in the second tx) - balanceAfterGoalCreation
-    const ETHReturned = (parseFloat(web3.utils.fromWei(balanceAfterGoalCompletion.toString(), "ether")) + parseFloat(web3.utils.fromWei(totalGasUsed.toString(), "ether"))) - parseFloat(web3.utils.fromWei(balanceAfterGoalCreation.toString(), "ether"));
-
-    //Check to make sure that only 0.25 ETH (50% of the original deposited amount) is returned
     assert.equal(
-      ETHReturned,
-      expectedReturnAmount,
-      "did not receive 50% of the goal amount back"
+      expectedEventResult.accountAddress,
+      goalOwner,
+      "markGoalAsComplete - incorrect goal owner returned",
+    );
+
+    assert.equal(
+      expectedEventResult.amountReturned,
+      amountReturned,
+      "markGoalAsComplete - incorrect goal amount returned",
     );
   });
 
@@ -172,8 +171,7 @@ contract("ETHGoals", function (accounts) {
   it("should allow owner to withdraw ETH in the contract", async () => {
     const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 5; //5 seconds in the future
     const goalDeposit = web3.utils.toWei("0.5");
-    const ownerBalBeforeWithdraw = await web3.eth.getBalance(contractOwner);
-    const expectedWithdrawAmount = 0.25;
+    const expectedWithdrawAmount = web3.utils.toWei("0.25");
 
     //Add a new goal for Carol
     await instance.addNewGoal("Carol's first goal", currentEpochTime, { from: carol, value: goalDeposit });
@@ -190,33 +188,35 @@ contract("ETHGoals", function (accounts) {
 
     //At this point, the contract will have 0.75 ETH remaining. 0.5 of which is locked in goal 2 still so the owner
     //should only be able to withdraw 0.25 ETH
+    const availableWithdrawAmount = await instance.getAvailableWithdrawAmount({ from: contractOwner });
+
+    assert.equal(
+      availableWithdrawAmount.toString(),
+      expectedWithdrawAmount,
+      "getAvailableWithdrawAmount did not return expected withdraw amount"
+    );
 
     //Call the withdraw function using the contractOwner account
     const tx = await instance.withdraw({ from: contractOwner });
-    const txInfo = await web3.eth.getTransaction(tx.tx);
 
-    // console.log(tx);
-    // console.log(txInfo);
+    const cOwner = tx.logs[0].args.owner;
+    const amountWithdrawn = tx.logs[0].args.amount.toString();;
 
-    //Calulate total gas used
-    const totalGasUsed = tx.receipt.gasUsed * parseFloat(txInfo.gasPrice);
+    const expectedEventResult = {
+      accountAddress: contractOwner,
+      amountWithdrawn: expectedWithdrawAmount
+    };
 
-    //Get contract owner balance after withdraw
-    const ownerBalAfterWithdraw = await web3.eth.getBalance(contractOwner);
-
-    //Calculate total ETH withdrawn
-    const ETHWithdrawn = parseFloat(web3.utils.fromWei(ownerBalAfterWithdraw.toString(), 'ether')) + parseFloat(web3.utils.fromWei(totalGasUsed.toString(), 'ether')) - parseFloat(web3.utils.fromWei(ownerBalBeforeWithdraw.toString(), 'ether'));
-
-    // console.log(`Contract Balance: ${contractBalance}`);
-    // console.log(`Owner Before Balance: ${ownerBalBeforeWithdraw}`);
-    // console.log(`Owner After Balance: ${ownerBalAfterWithdraw}`);
-    // console.log(`ETH Withdrawn: ${ETHWithdrawn}`);
-
-    //Check to make sure that the amount returned to the owner is the same as what was in the contract
     assert.equal(
-      ETHWithdrawn,
-      expectedWithdrawAmount,
-      "did not allow contract owner to withdraw the appropriate amount"
+      expectedEventResult.accountAddress,
+      cOwner,
+      "withdraw - incorrect contract owner returned",
+    );
+
+    assert.equal(
+      expectedEventResult.amountWithdrawn,
+      amountWithdrawn,
+      "withdraw - incorrect amount withdrawn",
     );
   });
 
@@ -267,5 +267,4 @@ contract("ETHGoals", function (accounts) {
     //Add a new goal for Alice
     await catchRevert(instance.addNewGoal("Alice's first goal", currentEpochTime, { from: alice, value: goalDeposit }));
   });
-
 });
