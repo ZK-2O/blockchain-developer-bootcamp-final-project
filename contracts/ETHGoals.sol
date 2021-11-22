@@ -24,7 +24,7 @@ contract ETHGoals is Ownable {
     mapping(address => uint[]) private userGoals;
     
     //Events
-    event GoalAdded(uint indexed goadID);
+    event GoalAdded(uint indexed goalID);
     
     event GoalCompleted(uint indexed goalID);
     
@@ -34,7 +34,7 @@ contract ETHGoals is Ownable {
     
     //Modifiers
     modifier onlyGoalOwner(uint _goalId) {
-        require(goalOwners[_goalId] == msg.sender, "Only the goal owner can make changes to the goal");
+        require(goalOwners[_goalId] == msg.sender, "Only the goal owner can retrieve or make changes to their goals");
         _;
     }
     
