@@ -131,8 +131,14 @@ contract ETHGoals is Ownable {
     function getMyGoals() public view returns (uint[] memory myGoals) {
         myGoals = userGoals[msg.sender];
     }
-    
+
+    /// @notice Allows the contract owner to withdraw the ETH stored in the contract (when users don't complete their goals in time and only 50% of their goal deposit is returned to them)
+    function withdraw() public onlyOwner {
+        payable(owner()).transfer(address(this).balance);
+    }
+
     /*
+    
     function addAccountabilityBuddyToGoal(uint _goalId, address accountabilityBuddy) public onlyGoalOwner(_goalId) {
         //Stretch goal functionality
     }
@@ -142,9 +148,4 @@ contract ETHGoals is Ownable {
     }
     
     */
-
-    /// @notice Allows the contract owner to withdraw the ETH stored in the contract (when users don't complete their goals in time and only 50% of their goal deposit is returned to them)
-    function withdraw() public onlyOwner {
-        payable(owner()).transfer(address(this).balance);
-    }
 }

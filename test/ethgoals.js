@@ -1,11 +1,7 @@
 const { catchRevert } = require("./exceptionsHelpers.js");
 const ETHGoals = artifacts.require("ETHGoals");
 
-/*
- * uncomment accounts to access the test accounts made available by the
- * Ethereum client
- * See docs: https://www.trufflesuite.com/docs/truffle/testing/writing-tests-in-javascript
- */
+
 contract("ETHGoals", function (accounts) {
   const [contractOwner, alice, bob, carol, denver] = accounts;
 
@@ -28,7 +24,7 @@ contract("ETHGoals", function (accounts) {
     );
   });
 
-  
+
   it("should be able to add new goals", async () => {
     const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 120; //2 minutes in the future
     const goalDeposit = web3.utils.toWei("0.5");
