@@ -131,7 +131,7 @@ contract("ETHGoals", function (accounts) {
 
 
   it("should return 50% of ETH amount when goal is marked as complete after the deadline ", async () => {
-    const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 5; //5 seconds in the future
+    const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 4; //4 seconds in the future
     const goalDeposit = web3.utils.toWei("0.5");
     const expectedReturnAmount = web3.utils.toWei("0.25");
 
@@ -181,7 +181,7 @@ contract("ETHGoals", function (accounts) {
     await instance.addNewGoal("Carol's second goal", currentEpochTime, { from: carol, value: goalDeposit });
 
     const delay = ms => new Promise(res => setTimeout(res, ms));
-    await delay(7000); //Wait for 7seconds
+    await delay(6000); //Wait for 6 seconds
 
     //Get Carol's goals
     const carolGoal = await instance.getMyGoals({ from: carol });

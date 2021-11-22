@@ -3,11 +3,22 @@ pragma solidity 0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
+/// @title Contract for Goals dApp
+/// @author Keith
+/// @notice Allows a user to set goals with monetary value (ETH) attached to them, which they get back when they complete the goal in time
+/// @dev All implemented functions should have no side effects. Functions related to future functionality are commented out
 contract ETHGoals is Ownable {
     
     //Variables and structs
+
+    /// @dev Used to assign an incrementing numeric ID to each goal added by a user
     uint private goalIdCounter = 0;
+
+    /// @dev Minimum Goal amount that must be attached to a goal
     uint private minGoalAmount = 0.01 ether;
+
+    /// @dev Used to track how much of the balance in the contract belongs to active (incomplete) goals
+    ///      The difference between the balance and this amount is what the contract owner should be allowed to withdraw   
     uint private lockedGoalAmount = 0;
     
     struct Goal {
@@ -20,35 +31,62 @@ contract ETHGoals is Ownable {
         bool completed;
     }
     
+    /// @dev Lists the goal owner for a given Goal ID
     mapping(uint => address) private goalOwners;
+
+    /// @dev Goal is the struct created with attributes related to a goal
     mapping(uint => Goal) private goals;
+
+    /// @dev Lists all the goals for a given address
     mapping(address => uint[]) private userGoals;
     
     //Events
+
+    /// @notice Emitted when a new goal is created
+    /// @param goalID Goal ID
     event GoalAdded(uint indexed goalID);
+
+    /// @notice Emitted when an existing goal is marked as completed by the goal owner
+    /// @param goalID Goal ID
     event GoalCompleted(uint indexed goalID);
+
+    /// @notice Emitted when the owner of a goal is returned the amount of ETH deposited for a goal
+    /// @param goalOwner Goal Owner address
+    /// @param amount Amount of ETH returned to the owner
     event GoalAmountReturnedToSender(address indexed goalOwner, uint amount);
+
+    /// @notice Emitted when the contract owner withdraws the withdrawable ETH from the contract
+    /// @param owner Contract Owner address
+    /// @param amount Amount of ETH transferred to the contract owner
     event amountWithdrawn(address indexed owner, uint amount);
     
 
     //Modifiers
+
+    /// @notice Ensures only the owner of the given Goal ID is able to retrieve the details or make changes to their goals
+    /// @param _goalId Goal ID
     modifier onlyGoalOwner(uint _goalId) {
         require(goalOwners[_goalId] == msg.sender, "Only the goal owner can retrieve or make changes to their goals");
         _;
     }
     
+    /// @notice Ensures the specified minimum goal amount is sent with a goal creation request
+    /// @param _minGoalAmount Minimum Goal amount
     modifier minimumGoalAmount(uint _minGoalAmount) {
         //require(msg.value >= _minGoalAmount, string(abi.encodePacked("Must supply a minimum of ", Strings.toString(_minGoalAmount), " wei with your goal")));
         require(msg.value >= _minGoalAmount, "Please supply a minimum of 0.01 ETH with your goal");
         _;
     }
 
+    /// @notice Ensures the description for the goal is not an empty string
+    /// @param _description Goal description
     modifier notEmptyDescription(string memory _description) {
-        //Goal description should not be empty
         require(bytes(_description).length > 0, "Goal description cannot be empty");
         _;
     }
     
+    /// @notice Ensures that the deadline date supplied for the goal is in the future
+    /// @param _suppliedDeadline Supplied deadline in Unix epoch time
     modifier futureDeadlineOnly(uint _suppliedDeadline) {
         //Ideally, deadline should be more like 30-60 minutes in the future but keeping at greater than current timestamp for the purpose of quick testing of the project
         //require (_suppliedDeadline >= (block.timestamp + 1 hours), "Supplied deadline must be at least 1 hour in the future");
@@ -95,16 +133,17 @@ contract ETHGoals is Ownable {
     
     /// @notice Marks an existing goal of the sender as completed
     /// @param _goalId Goal ID for the goal that the user wants to mark as completed
+    /// @dev I could allow the user to specify exactly when they completed the goal instead of
+    ///      relying on the tx timestamp for it. However, this means a user could always say they completed the goal
+    ///      in time and always claim back the full amount.
+    ///      In the future, when the "accountability buddy" functionality is added, I could add the ability
+    ///      to specify the completion date manually so the accountability buddy can verify it before the amount is returned to the user.
+    ///      This would remove the dependency on the block.timestamp
     function markGoalAsComplete(
         uint _goalId
     ) public onlyGoalOwner(_goalId) {
         
-        //NOTE: I could allow the user to specify exactly when they completed the goal instead of
-        //      relying on the tx timestamp for it. However, this means a user could always say they completed the goal
-        //      in time and always claim back the full amount.
-        //      In the future, when the "accountability buddy" functionality is added, I could add the ability
-        //      to specify the completion date manually so the accountability buddy can verify it before the amount is returned to the user.
-        //      This would remove the dependency on the block.timestamp
+        
         
         //Goal has to be incomplete to be marked as completed
         require(goals[_goalId].completed == false, "Goal is already marked as complete");
@@ -138,22 +177,24 @@ contract ETHGoals is Ownable {
     /// @notice Retrieve the details for a goal based on the goal ID
     /// @param _goalId Goal ID for which the user wants to retrieve the details
     /// @return id Goal ID
-    /// @return description Goal description
-    /// return amount Goal amount
-    /// return deadline Goal deadline
-    /// return completedTimestamp Goal completion timestamp
-    /// return completed Goal completion status
+    /// @return description - Goal description
+    ///         amount - Goal amount
+    ///         deadline - Goal deadline
+    ///         completedTimestamp - Goal completion timestamp
+    ///         completed - Goal completion status
     function getMyGoalById(uint _goalId) public view onlyGoalOwner(_goalId) returns ( uint id, string memory description, /* address accountabilityBuddy //For future functionality, */ uint amount, uint deadline, uint completedTimestamp, bool completed) {
         Goal memory tempGoal = goals[_goalId];
         return (tempGoal.id, tempGoal.description, /* tempGoal.accountabilityBuddy //For future functionality, */ tempGoal.amount, tempGoal.deadline, tempGoal.completedTimestamp, tempGoal.completed);
     }
     
     /// @notice Retrieve all the goal IDs for the user calling the function
-    /// @return myGoals Goal IDs for the user calling the function
+    /// @return myGoals - Goal IDs for the user calling the function
     function getMyGoals() public view returns (uint[] memory myGoals) {
         myGoals = userGoals[msg.sender];
     }
 
+    /// @notice Retrieve the avalable amount of ETH that the contract owner can withdraw from the contract
+    /// @return withdrawAmount - amount of ETH that the contract owner can withdraw from the contract
     function getAvailableWithdrawAmount() public view onlyOwner returns (uint withdrawAmount) {
         withdrawAmount = address(this).balance - lockedGoalAmount;
     }
