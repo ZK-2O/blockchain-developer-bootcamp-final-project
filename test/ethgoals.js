@@ -13,10 +13,12 @@ contract("ETHGoals", function (accounts) {
     instance = await ETHGoals.new();
   });
 
+
   it("contract is deployed", async function () {
     await ETHGoals.deployed();
     return assert.isTrue(true);
   });
+
 
   it("is owned by owner", async () => {
     assert.equal(
@@ -26,6 +28,7 @@ contract("ETHGoals", function (accounts) {
     );
   });
 
+  
   it("should be able to add new goals", async () => {
     const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 120; //2 minutes in the future
     const goalDeposit = web3.utils.toWei("0.5");
@@ -113,7 +116,7 @@ contract("ETHGoals", function (accounts) {
 
 
   it("should return 50% of ETH amount when goal is marked as complete after the deadline ", async () => {
-    const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 5; //2 minutes in the future
+    const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 5; //5 seconds in the future
     const goalDeposit = web3.utils.toWei("0.5");
 
     //Add a new goal for Carol
@@ -149,6 +152,50 @@ contract("ETHGoals", function (accounts) {
     );
   });
 
+
+  it("should allow owner to withdraw ETH in the contract", async () => {
+    const currentEpochTime = Math.floor(new Date().getTime() / 1000) + 5; //5 seconds in the future
+    const goalDeposit = web3.utils.toWei("0.5");
+    const ownerBalBeforeWithdraw = await web3.eth.getBalance(contractOwner);
+
+    //Add a new goal for Carol
+    await instance.addNewGoal("Carol's first goal", currentEpochTime, { from: carol, value: goalDeposit });   
+
+    const delay = ms => new Promise(res => setTimeout(res, ms));
+    await delay(6000); //Wait for 6 seconds
+
+    //Get Carol's goals
+    const carolGoal = await instance.getMyGoals({ from: carol });
+    
+    //Mark Carol's goal as completed and stored the tx receipt
+    await instance.markGoalAsComplete(carolGoal[0], { from: carol });
+
+    const contractBalance = await web3.eth.getBalance(instance.address);
+
+    //Call the withdraw function using the contractOwner account
+    const tx = await instance.withdraw({ from: contractOwner });
+    const txInfo = await web3.eth.getTransaction(tx.tx);
+
+    //Calulate total gas used
+    const totalGasUsed = tx.receipt.gasUsed * parseFloat(txInfo.gasPrice);
+
+    //Get contract owner balance after withdraw
+    const ownerBalAfterWithdraw = await web3.eth.getBalance(contractOwner);
+
+    //Calculate total ETH withdrawn
+    const ETHWithdrawn = parseFloat(web3.utils.fromWei(ownerBalAfterWithdraw.toString(), 'ether')) + parseFloat(web3.utils.fromWei(totalGasUsed.toString(), 'ether')) - parseFloat(web3.utils.fromWei(ownerBalBeforeWithdraw.toString(), 'ether'));
+
+    //Check to make sure that the amount returned to the owner is the same as what was in the contract
+    assert.equal(
+      ETHWithdrawn,
+      parseFloat(web3.utils.fromWei(contractBalance, "ether")),
+      "did not allow contract owner to withdraw full contract balance"
+    );
+  });
+
+  it("should not allow anyone other than the contract owner to call withdraw function", async () => {
+    await catchRevert(instance.withdraw({ from: alice }));
+  });
 
 
   it("should not be allowed to retrieve another user's goals", async () => {

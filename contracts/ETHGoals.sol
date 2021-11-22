@@ -141,9 +141,10 @@ contract ETHGoals is Ownable {
         //Stretch goal functionality
     }
     
-    function withdraw() public onlyOwner {
-        //Stretch goal functionality - allow contract owner to claim the leftover ETH in the contract from whenever a user fails to meet their goal deadline and 
-        //only gets half their goal amount back and the other half is kept in the contract
-    }
     */
+
+    /// @notice Allows the contract owner to withdraw the ETH stored in the contract (when users don't complete their goals in time and only 50% of their goal deposit is returned to them)
+    function withdraw() public onlyOwner {
+        payable(owner()).transfer(address(this).balance);
+    }
 }
