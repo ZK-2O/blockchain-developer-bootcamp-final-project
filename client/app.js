@@ -5,6 +5,66 @@ let walletConnected = false;
 
 
 //#region Functions
+//await ethereum.request({method: "eth_requestAccounts"});
+
+function isWalletConnected() {
+    if (ethereum.selectedAddress == null)
+        return false;
+    else
+        return true;
+}
+
+function walletConnectionState() {
+    if(walletConnected)
+        return true;
+    else
+        return false;
+}
+
+function isMetamaskAvailable() {
+    if (typeof window.ethereum !== 'undefined')
+        return true;
+    else
+        return false;
+}
+
+function isCorrectChain() {
+    if (ethereum.chainId == "0x3")
+    {
+        return true;
+    }
+
+    return false;
+}
+
+async function connectWallet() {
+    if (isWalletConnected())
+    {
+        if (!isCorrectChain())
+        {
+            updateAlert("Please connect to Ropsten", "danger");
+            return false;
+        }
+
+        updateConnectionStatus(true);
+        showAddGoalForm();
+        return true;
+    }
+    else
+    {
+        await ethereum.request({method: "eth_requestAccounts"});
+
+        if (!isCorrectChain())
+        {
+            updateAlert("Please connect to Ropsten", "danger");
+            return false;
+        }
+
+        updateConnectionStatus(true);
+        showAddGoalForm();
+        return true;
+    }
+}
 
 function updateAlert(message, type) {
     var wrapper = document.createElement('div')
@@ -13,8 +73,8 @@ function updateAlert(message, type) {
     alertPlaceholder.append(wrapper)
   }
 
-function updateStatusOnChainChange(_chainId) {
-    if (_chainId !== "0x3") {
+function updateStatusOnChainChange() {
+    if (!isCorrectChain()) {
         updateAlert("Please connect to Ropsten", "danger");
     }
     else
@@ -23,46 +83,73 @@ function updateStatusOnChainChange(_chainId) {
     }
 }
 
+async function updateConnectionStatus(connect) {
+    let mmBtn = this.document.getElementById("mm-connect");
+
+    if (connect)
+    {
+        console.log(`Selected address ${ethereum.selectedAddress}`);
+        mmBtn.textContent = "Disconnect"
+        mmBtn.classList.remove("btn-outline-dark");
+        mmBtn.classList.add("btn-success");
+        
+        let walletText = this.document.getElementById("wallet-address");
+        walletText.innerHTML = ethereum.selectedAddress.slice(0,6) + "..." + ethereum.selectedAddress.slice(38,42);
+        walletConnected = true;
+    }
+    else
+    {
+        console.log(`Disconnected`);
+        mmBtn.textContent = "Connect Wallet"
+        mmBtn.classList.add("btn-outline-dark");
+        mmBtn.classList.remove("btn-success");
+        
+        let walletText = this.document.getElementById("wallet-address");
+        walletText.innerHTML = "";
+        walletConnected = false;
+    }
+}
+
+async function disconnectWallet() {
+    updateConnectionStatus(false);
+    hideAddGoalForm();
+}
+
+function showAddGoalForm() {
+    let addGoalForm = this.document.getElementById("addGoalForm");
+    addGoalForm.classList.remove("collapse");
+}
+
+function hideAddGoalForm() {
+    let addGoalForm = this.document.getElementById("addGoalForm");
+    addGoalForm.classList.add("collapse");
+}
+
+
 //#endregion
-window.addEventListener('load', function() { 
-    
+window.addEventListener('load', async () => { 
+    if (!isMetamaskAvailable()) {
+        console.log("Metamask is NOT present");
+        updateAlert("Metamask not found. Please install it to use this dApp!", "danger");
+        return;
+    }
 });
-
-
 
 let mmBtn = this.document.getElementById("mm-connect");
 mmBtn.onclick = async () => {
-    if (typeof window.ethereum !== 'undefined') {
-        metamaskAvailable = true;
-
-        ethereum.on('chainChanged', (_chainId) => {
-            //window.location.reload()
-            updateStatusOnChainChange(_chainId)
-        });
-    }
-    else {
-        console.log("Metamask is NOT present");
-        updateAlert("Metamask not found. Please install it to use this dApp!", "danger");
-    }
-
-    if (metamaskAvailable)
+    if (isMetamaskAvailable())
     {
-        await ethereum.request({method: "eth_requestAccounts"});
-
-        if (ethereum.isConnected())
+        if (walletConnectionState())
         {
-            if (ethereum.chainId !== "0x3") {
-                updateAlert("Please connect to Ropsten", "danger");
-            }
-            else
-            {
-                let walletText = this.document.getElementById("wallet-address");
-                walletText.innerHTML = ethereum.selectedAddress;
-            }
+            disconnectWallet();
         }
         else
         {
-            updateAlert("Please connect to Metamask", "danger");
+            connectWallet();
         }
+    }
+    else
+    {
+        updateAlert("Metamask not found. Please install it to use this dApp!", "danger");
     }
 }
