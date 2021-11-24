@@ -5,54 +5,130 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Goal dApp</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+    
 </head>
 <body>
     <header class="p-3">
-        <div class="container">
-          <div id="notification-bar">
+      <div class="container">
+        <div id="notification-bar">
 
-          </div>
+        </div>
 
-          <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
-            <a href="./index.html" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
-              <img class="bi me-2" width="50" height="50" role="img" src="../assets/goal.png">
-            </a>
-    
-            <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
-              <li><a href="#" class="nav-link px-2 text-secondary"><h3>Goal dApp</h3></a></li>
-            </ul>
+        <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+          <a href="./index.html" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+            <img class="bi me-2" width="50" height="50" role="img" src="../assets/goal.png">
+          </a>
+  
+          <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+            <li><a href="#" class="nav-link px-2 text-secondary"><h3>Goal dApp</h3></a></li>
+          </ul>
 
-            <div class="text-end">
-              <label id="wallet-address"></label>
-              <button type="button" id="mm-connect" class="btn btn-outline-dark me-2">Connect Wallet</button>
+          
+
+          <div class="text-end">
+            <label class="font-monospace" id="wallet-address"></label>
+            <div id="wallet-balance-div" class="badge bg-primary text-wrap collapse">
+              <label class="font-monospace fs-5" id="wallet-balance">12.6 ETH</label>
             </div>
+            <button type="button" id="mm-connect" onclick="toggleWalletConnection()" class="btn btn-outline-dark me-2">Connect Wallet</button>
           </div>
-          <nav class="py-2">
-                <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 mb-md-0">
-                    <h5>Put your money where your mouth is!</h5>
-                </ul>
-          </nav>
         </div>
-      </header>
+        <nav class="py-2">
+              <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 mb-md-0 justify-content-center">
+                  <h5>Put your money where your mouth is!</h5>
+              </ul>
+        </nav>
+      </div>
+    </header>
 
 
-    <div class="container">
-      <div id="addGoalForm" class="col-4 collapse">
-        <div class="mb-3">
-          <label for="goalDescription" class="form-label">Goal Description</label>
-          <input type="text" class="form-control" id="goalDescription" placeholder="Finish Consensys Bootcamp Final Project">
+    <div class="container px-5">
+      <div class="row gx-5">
+        <div class="col shadow mb-5 bg-body rounded">
+          <form class="needs-validation" novalidate>
+            <div id="addGoalForm" class="col-8 collapse">
+              <div class="mb-3">
+                <h1 class="display-6 pt-3">
+                  Add a Goal
+                </h1>
+              </div>
+              <div class="mb-3">
+                <label for="goalDescription" class="form-label">Goal Description</label>
+                <input type="text" class="form-control" id="goalDescription" placeholder="Finish Consensys Bootcamp Final Project">
+                <div class="invalid-feedback">
+                  Please provide a goal description
+                </div>
+              </div>
+              <div class="mb-3">
+                <div class="row">
+                  <label for="deadline" class="form-label">Deadline (Unix Epoch Time in Seconds)</label>
+
+                  <div class="col">
+                  <input type="number" class="form-control" id="deadline">
+                  </div>
+                  <div class="col">
+                      <button type="button" id="getEpochTime2Min" onclick="getEpochTime(120)" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Get the epoch time for 2 minutes from now">+2 min</button>
+                  </div>
+                </div>
+              </div>
+              <div class="mb-3">
+                <button type="button" id="submitGoal" onclick="submitNewGoal()" class="btn btn-primary">Submit Goal</button>
+            </div>
+          </form>
         </div>
-        <div class="mb-3">
-          <label for="deadline" class="form-label">Deadline (Unix Epoch Time in Seconds)</label>
-          <input type="number" class="form-control" id="deadline">
+
         </div>
-        <div class="mb-3">
-          <button type="button" id="submitGoal" class="btn btn-success">Submit Goal</button>
+        <div class="col col-1"></div>
+        <div class="col shadow mb-5 bg-body rounded">
+          <form class="needs-validation" novalidate>
+            <div id="GoalListForm" class="col-8 collapse">
+              <div class="mb-3">
+                <h1 class="display-6 pt-3">
+                  Your Goals
+                </h1>
+              </div>
+              <div class="mb-3">
+                <input class="form-check-input" type="radio" name="flexRadioDefault" id="goal-1">
+                <label class="form-check-label" for="goal-1">
+                  Finish the Consensys Bootcamp final project!
+                </label>
+                <label>
+                  (Nov. 30, 2021) - 1.5 ETH
+                </label>
+              </div>
+              <div class="mb-3">
+                <input class="form-check-input" type="radio" name="flexRadioDefault" id="goal-2">
+                <label class="form-check-label" for="goal-2">
+                  Goal 2
+                </label>
+              </div>
+              <div class="mb-3">
+                <input class="form-check-input" type="radio" name="flexRadioDefault" id="goal-2">
+                <label class="form-check-label" for="goal-2">
+                  Goal 3
+                </label>
+              </div>
+              <div class="mb-3">
+                <button type="button" id="submitGoalCompletion" class="btn btn-success">Mark Goal Completed</button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
+
+
+      <div class="container collapse" id="contractOwnerOnlyDiv">
+        <div class="row justify-content-center">
+            <button type="button" id="withdrawEth" class="btn btn-danger">Withdraw Eth</button>
+        </div>
     </div>
 </body>
+
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
 <script src="app.js"></script>
+
 </html>
