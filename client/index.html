@@ -48,7 +48,7 @@
     <div class="container px-5">
       <div class="row gx-5">
         <div class="col shadow mb-5 bg-body rounded">
-          <form class="needs-validation" novalidate>
+          <form id="addGoalFormElement" class="needs-validation" novalidate>
             <div id="addGoalForm" class="col-8 collapse">
               <div class="mb-3">
                 <h1 class="display-6 pt-3">
@@ -57,25 +57,40 @@
               </div>
               <div class="mb-3">
                 <label for="goalDescription" class="form-label">Goal Description</label>
-                <input type="text" class="form-control" id="goalDescription" placeholder="Finish Consensys Bootcamp Final Project">
-                <div class="invalid-feedback">
+                <input type="text" class="form-control" id="goalDescription" required placeholder="Finish Consensys Bootcamp Final Project">
+                <div id="goalDescriptionFeedback" class="invalid-feedback">
                   Please provide a goal description
                 </div>
               </div>
               <div class="mb-3">
                 <div class="row">
                   <label for="deadline" class="form-label">Deadline (Unix Epoch Time in Seconds)</label>
-
                   <div class="col">
-                  <input type="number" class="form-control" id="deadline">
+                  <input type="number" class="form-control" id="deadline" required>
                   </div>
                   <div class="col">
                       <button type="button" id="getEpochTime2Min" onclick="getEpochTime(120)" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Get the epoch time for 2 minutes from now">+2 min</button>
                   </div>
                 </div>
+                <div id="deadlineFeedback" class="invalid-feedback">
+                  Deadline must be at least 2 minutes in the future!
+                </div>
               </div>
               <div class="mb-3">
-                <button type="button" id="submitGoal" onclick="submitNewGoal()" class="btn btn-primary">Submit Goal</button>
+                <div class="row">
+                  <label for="ethAmount" class="form-label">Amount of ETH</label>
+                  <div class="col-6">
+                  <input type="number" step="any" class="form-control" placeholder="0.01" id="ethAmount" required>
+                  </div>
+                  <div id="ethAmountFeedback" class="invalid-feedback">
+                    Must supply at least 0.01 ETH
+                  </div>
+                </div>
+              </div>
+              <div class="mb-3">
+                <button type="button" id="submitGoal" onclick="submitNewGoal()" class="btn btn-primary">
+                  <span id="submitGoalSpinner" class="spinner-border spinner-border-sm collapse" role="status" aria-hidden="false"></span>   Submit Goal
+                </button>
             </div>
           </form>
         </div>

@@ -1,6 +1,6 @@
 //console.log("I'm here");
 
-const contractAddress = "";
+const contractAddress = "0xb69278ae3c2fa3a7a9c7879f2a58d0d73129b8b7";
 const contractABI = [
 	{
 		"inputs": [
@@ -286,6 +286,17 @@ async function connectWallet() {
 
         updateConnectionStatus(true);
 
+        var web3 = new Web3(window.ethereum);
+        const ethGoals = new web3.eth.Contract(contractABI, contractAddress);
+        ethGoals.setProvider(window.ethereum);
+
+        const ownerAddress = await ethGoals.methods.owner().call();
+
+        if (ethereum.selectedAddress == ownerAddress)
+            toggleAdminForm(true);
+        else
+            toggleAdminForm(false);
+
         //Show the forms
         toggleAddGoalForm(true);
         toggleGoalListForm(true);
@@ -318,6 +329,7 @@ async function disconnectWallet() {
     //Hide the forms
     toggleAddGoalForm(false);
     toggleGoalListForm(false);
+    toggleAdminForm(false);
 }
 
 async function toggleWalletConnection() {
@@ -436,6 +448,22 @@ async function updateConnectionStatus(connect) {
     }
 }
 
+function submitButtonSpinner(enable) {
+    let submitGoalBtn = document.getElementById('submitGoal');
+    let submitGoalSpinner = document.getElementById('submitGoalSpinner');
+    
+    if (enable)
+    {
+        submitGoalBtn.setAttribute('disabled','');
+        submitGoalSpinner.classList.remove("collapse");
+    }
+    else
+    {
+        submitGoalBtn.removeAttribute('disabled');
+        submitGoalSpinner.classList.add("collapse");
+    }
+}
+
 //#endregion
 
 //#region Helper Functions
@@ -450,6 +478,7 @@ function getEpochTime(num) {
 function resetAllFields()
 {
     //This function should reset all fields on the page
+    document.getElementById("addGoalFormElement").reset();
 }
 
 function enableToolTips() {
@@ -480,9 +509,98 @@ async function submitNewGoal() {
 
     let goalDescription = document.getElementById('goalDescription').value.trim();
     let deadline = parseInt(document.getElementById('deadline').value.trim());
+    let ethAmount = document.getElementById('ethAmount').value.trim();
 
-    var tx = await ethGoals.methods.addNewGoal(goalDescription, deadline).send({from: ethereum.selectedAddress});
-    console.log(`Tx: ${tx.tx}`);
+    if (validateSubmitGoalParameters(goalDescription, deadline, ethAmount))
+    {
+        submitButtonSpinner(true);
+
+        ethGoals.methods.addNewGoal(goalDescription, deadline).send({from: ethereum.selectedAddress, value: web3.utils.toWei(ethAmount)}).then(tx => {
+            console.log(tx);
+
+            updateAlert(`Goal Submitted! <a href="https://ropsten.etherscan.io/tx/${tx.transactionHash}" target="_blank">View Tx</a>`, "success")
+            console.log(`Tx: ${JSON.stringify(tx)}`);
+            
+            resetAllFields();
+            submitButtonSpinner(false);
+
+        }).catch(e => {
+            if (e.code === 4001){
+                submitButtonSpinner(false);
+            }
+            else
+            {
+                console.log(e);
+
+                //Parse out just the JSON string from the error message (this is the tx object)
+                let err = JSON.parse(e.message.slice(e.message.indexOf('{')))
+                console.log(err);
+
+                updateAlert(`Goal Submission failed! <a href="https://ropsten.etherscan.io/tx/${err.transactionHash}" target="_blank">View Tx</a>`, "danger")
+
+                submitButtonSpinner(false);
+            }
+       });;
+
+    }
+    else
+    {
+        console.log("Validate New Goal input!");
+    }
+}
+
+//#endregion
+
+//#region Validation Functions
+
+function validateSubmitGoalParameters(_description, _deadline, _ethAmount) {
+    let goalDescription = document.getElementById('goalDescription');
+    let deadline = document.getElementById('deadline');
+    let ethAmount = document.getElementById('ethAmount');
+
+    let goalDescriptionFB = document.getElementById('goalDescriptionFeedback');
+    let deadlineFB = document.getElementById('deadlineFeedback');
+    let ethAmountFB = document.getElementById('ethAmountFeedback');
+
+    let addGoalFormElement = document.getElementById('addGoalFormElement');
+
+    let epochTime = parseInt(new Date().getTime() / 1000);
+    let returnVal = true;
+
+    if (goalDescription.value.trim() == "")
+    {
+        goalDescriptionFB.style.display = 'block';
+        returnVal = false;
+    }
+    else
+    {
+        goalDescriptionFB.style.display = 'none';
+    }
+
+    if (parseFloat(deadline.value.trim()) >= (epochTime + 0))
+    {
+        deadlineFB.style.display = 'none';
+    }
+    else
+    {
+        deadlineFB.style.display = 'block';
+        returnVal = false;
+    }
+
+    if (ethAmount.value.trim() == "" || parseFloat(ethAmount.value.trim()) < 0.01)
+    {
+        ethAmountFB.style.display = 'block';
+        returnVal = false;
+    }
+    else
+    {
+        ethAmountFB.style.display = 'none';
+    }
+
+
+    //addGoalFormElement.classList.add('was-validated');
+
+    return returnVal;
 }
 
 //#endregion
