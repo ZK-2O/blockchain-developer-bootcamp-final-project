@@ -1,6 +1,6 @@
 //console.log("I'm here");
 
-const contractAddress = "0xb69278ae3c2fa3a7a9c7879f2a58d0d73129b8b7";
+const contractAddress = "";
 const contractABI = [
 	{
 		"inputs": [
@@ -286,20 +286,10 @@ async function connectWallet() {
 
         updateConnectionStatus(true);
 
-        var web3 = new Web3(window.ethereum);
-        const ethGoals = new web3.eth.Contract(contractABI, contractAddress);
-        ethGoals.setProvider(window.ethereum);
-
-        const ownerAddress = await ethGoals.methods.owner().call();
-
-        if (ethereum.selectedAddress == ownerAddress)
-            toggleAdminForm(true);
-        else
-            toggleAdminForm(false);
-
         //Show the forms
         toggleAddGoalForm(true);
         toggleGoalListForm(true);
+        toggleAdminForm(true);
 
         return true;
     }
@@ -318,6 +308,7 @@ async function connectWallet() {
         //Show the forms
         toggleAddGoalForm(true);
         toggleGoalListForm(true);
+        toggleAdminForm(true);
 
         return true;
     }
@@ -376,12 +367,32 @@ function toggleGoalListForm(show) {
         goalListForm.classList.add("collapse");
 }
 
-function toggleAdminForm(show) {
+async function toggleAdminForm(show) {
     let contractOwnerOnlyDiv = this.document.getElementById("contractOwnerOnlyDiv");
-
+    let withdrawEthLabel = this.document.getElementById("withdrawEthLabel");
+    
     if (show)
     {
-        contractOwnerOnlyDiv.classList.remove("collapse");
+        var web3 = new Web3(window.ethereum);
+        const ethGoals = new web3.eth.Contract(contractABI, contractAddress);
+        ethGoals.setProvider(window.ethereum);
+
+        const ownerAddress = await ethGoals.methods.owner().call();
+        console.log(ownerAddress);
+
+        if (ethereum.selectedAddress.toLowerCase() == ownerAddress.toLowerCase())
+        {
+            const withdrawableAmount = await ethGoals.methods.getAvailableWithdrawAmount().call({from: ethereum.selectedAddress});
+            console.log(withdrawableAmount);
+
+            withdrawEthLabel.innerHTML = `Available ETH to withdraw: ${parseFloat(web3.utils.fromWei(withdrawableAmount.toString())).toFixed(2)} ETH`;
+            contractOwnerOnlyDiv.classList.remove("collapse");
+        }
+        else
+        {
+            withdrawEthLabel.innerHTML = "";
+            contractOwnerOnlyDiv.classList.add("collapse");
+        }
     }
     else
     {
@@ -448,19 +459,19 @@ async function updateConnectionStatus(connect) {
     }
 }
 
-function submitButtonSpinner(enable) {
-    let submitGoalBtn = document.getElementById('submitGoal');
-    let submitGoalSpinner = document.getElementById('submitGoalSpinner');
+function buttonSpinner(enable, buttonId, spinnerId) {
+    let btn = document.getElementById(buttonId);
+    let spinner = document.getElementById(spinnerId);
     
     if (enable)
     {
-        submitGoalBtn.setAttribute('disabled','');
-        submitGoalSpinner.classList.remove("collapse");
+        btn.setAttribute('disabled','');
+        spinner.classList.remove("collapse");
     }
     else
     {
-        submitGoalBtn.removeAttribute('disabled');
-        submitGoalSpinner.classList.add("collapse");
+        btn.removeAttribute('disabled');
+        spinner.classList.add("collapse");
     }
 }
 
@@ -513,7 +524,7 @@ async function submitNewGoal() {
 
     if (validateSubmitGoalParameters(goalDescription, deadline, ethAmount))
     {
-        submitButtonSpinner(true);
+        buttonSpinner(true, "submitGoal", "submitGoalSpinner");
 
         ethGoals.methods.addNewGoal(goalDescription, deadline).send({from: ethereum.selectedAddress, value: web3.utils.toWei(ethAmount)}).then(tx => {
             console.log(tx);
@@ -522,11 +533,11 @@ async function submitNewGoal() {
             console.log(`Tx: ${JSON.stringify(tx)}`);
             
             resetAllFields();
-            submitButtonSpinner(false);
+            buttonSpinner(false, "submitGoal", "submitGoalSpinner");
 
         }).catch(e => {
             if (e.code === 4001){
-                submitButtonSpinner(false);
+                buttonSpinner(false, "submitGoal", "submitGoalSpinner");
             }
             else
             {
@@ -538,7 +549,7 @@ async function submitNewGoal() {
 
                 updateAlert(`Goal Submission failed! <a href="https://ropsten.etherscan.io/tx/${err.transactionHash}" target="_blank">View Tx</a>`, "danger")
 
-                submitButtonSpinner(false);
+                buttonSpinner(false, "submitGoal", "submitGoalSpinner");
             }
        });;
 
@@ -547,6 +558,14 @@ async function submitNewGoal() {
     {
         console.log("Validate New Goal input!");
     }
+}
+
+async function markGoalComplete() {
+
+}
+
+async function withdrawEth() {
+
 }
 
 //#endregion
