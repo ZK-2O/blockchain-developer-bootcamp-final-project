@@ -30,7 +30,7 @@
 
           <div class="text-end">
             <label class="font-monospace" id="wallet-address"></label>
-            <div id="wallet-balance-div" class="badge bg-primary text-wrap collapse">
+            <div id="wallet-balance-div" class="badge rounded-pill bg-primary text-wrap collapse">
               <label class="font-monospace fs-5" id="wallet-balance">12.6 ETH</label>
             </div>
             <button type="button" id="mm-connect" onclick="toggleWalletConnection()" class="btn btn-outline-dark me-2">Connect Wallet</button>
@@ -106,30 +106,12 @@
                 </h1>
               </div>
               <div class="mb-3">
-                <input class="form-check-input" type="radio" name="flexRadioDefault" id="goal-1">
-                <label class="form-check-label" for="goal-1">
-                  Finish the Consensys Bootcamp final project!
-                </label>
-                <label>
-                  (Nov. 30, 2021) - 1.5 ETH
-                </label>
+                <select id="userGoalsDropDown" class="form-select" aria-label="Default select example">
+                  <option value="0" selected>Select a goal</option>
+                </select>
               </div>
               <div class="mb-3">
-                <input class="form-check-input" type="radio" name="flexRadioDefault" id="goal-2">
-                <label class="form-check-label" for="goal-2">
-                  Goal 2
-                </label>
-              </div>
-              <div class="mb-3">
-                <input class="form-check-input" type="radio" name="flexRadioDefault" id="goal-2">
-                <label class="form-check-label" for="goal-2">
-                  Goal 3
-                </label>
-              </div>
-              <div class="mb-3">
-              </div>
-              <div class="mb-3">
-                <button type="button" id="submitGoalCompletion" onclick="markGoalComplete()" class="btn btn-success">
+                <button type="button" id="submitGoalCompletion" onclick="markGoalComplete()" class="btn btn-primary">
                   <span id="submitGoalCompletionSpinner" class="spinner-border spinner-border-sm collapse" role="status" aria-hidden="false"></span>   Mark Goal Completed
                 </button>
               </div>
@@ -153,7 +135,7 @@
                 <label class="form-check-label" id="withdrawEthLabel"></label>
               </div>
               <div class="mb-3">
-                <button type="button" id="withdrawEth" onclick="withdrawEth()" class="btn btn-danger">
+                <button type="button" id="withdrawEth" onclick="withdraw()" class="btn btn-danger">
                   <span id="withdrawEthSpinner" class="spinner-border spinner-border-sm collapse" role="status" aria-hidden="false"></span>   Withdraw Eth
                 </button>
               </div>

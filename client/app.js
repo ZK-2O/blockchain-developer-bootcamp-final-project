@@ -1,6 +1,6 @@
 //console.log("I'm here");
 
-const contractAddress = "";
+const contractAddress = "0xb69278ae3c2fa3a7a9c7879f2a58d0d73129b8b7";
 const contractABI = [
 	{
 		"inputs": [
@@ -357,14 +357,21 @@ function toggleAddGoalForm(show) {
         addGoalForm.classList.add("collapse");
 }
 
-function toggleGoalListForm(show) {
+async function toggleGoalListForm(show) {
 
     let goalListForm = this.document.getElementById("GoalListForm");
     
     if (show)
+    {
+        removeGoalList();
         goalListForm.classList.remove("collapse");
+        getMyGoals();
+        
+    }
     else
+    {
         goalListForm.classList.add("collapse");
+    }
 }
 
 async function toggleAdminForm(show) {
@@ -422,7 +429,7 @@ async function updateConnectionStatus(connect) {
         console.log(`Selected address ${ethereum.selectedAddress}`);
         mmBtn.textContent = "Disconnect"
         mmBtn.classList.remove("btn-outline-dark");
-        mmBtn.classList.add("btn-danger");
+        mmBtn.classList.add("btn-dark");
         
         //Show wallet address
         let walletText = this.document.getElementById("wallet-address");
@@ -442,7 +449,7 @@ async function updateConnectionStatus(connect) {
         console.log(`Disconnected`);
         mmBtn.textContent = "Connect Wallet"
         mmBtn.classList.add("btn-outline-dark");
-        mmBtn.classList.remove("btn-danger");
+        mmBtn.classList.remove("btn-dark");
         
         //Hide wallet address
         let walletText = this.document.getElementById("wallet-address");
@@ -490,6 +497,13 @@ function resetAllFields()
 {
     //This function should reset all fields on the page
     document.getElementById("addGoalFormElement").reset();
+    document.getElementById("GoalListForm").reset();
+    //removeGoalList();
+}
+
+async function removeGoalList() {
+    var options = document.querySelectorAll('#userGoalsDropDown option');
+    options.forEach(o => o.remove());
 }
 
 function enableToolTips() {
@@ -509,8 +523,48 @@ async function getMyGoals() {
     const ethGoals = new web3.eth.Contract(contractABI, contractAddress);
     ethGoals.setProvider(window.ethereum);
 
-    var myGoals = await ethGoals.methods.owner().call();
-    console.log(`Contract Owner: ${myGoals}`);
+    var myGoals = await ethGoals.methods.getMyGoals().call({from: ethereum.selectedAddress});
+    if (myGoals)
+    {
+        console.log(myGoals);
+        var userGoalsDropDown = document.getElementById("userGoalsDropDown");
+
+        for(var i = 0; i <= myGoals.length; i++) 
+        {
+            if (i == 0)
+            {
+                var option = document.createElement('option');
+
+                option.text = "Select a goal"
+                option.value = 0;
+                userGoalsDropDown.add(option);
+                continue;
+            }
+            
+            var goalDetails = await ethGoals.methods.getMyGoalById(myGoals[i - 1]).call({from: ethereum.selectedAddress});
+
+            if (!goalDetails.completed)
+            {
+                var tempDate = new Date(0); // The 0 there is the key, which sets the date to the epoch
+                tempDate.setUTCSeconds(goalDetails.deadline);
+
+                var option = document.createElement('option');
+
+                if (i == 0)
+                {
+                    option.text = "Select a goal"
+                    option.value = 0;
+                    userGoalsDropDown.add(option);
+                }
+                else
+                {
+                    option.text = `${goalDetails.description} (${parseFloat(web3.utils.fromWei(goalDetails.amount)).toFixed(3)} ETH)`;
+                    option.value = parseInt(myGoals[i - 1]);
+                    userGoalsDropDown.add(option);
+                }
+            }
+        }
+    }
 }
 
 async function submitNewGoal() {
@@ -561,11 +615,102 @@ async function submitNewGoal() {
 }
 
 async function markGoalComplete() {
+    var web3 = new Web3(window.ethereum);
+    const ethGoals = new web3.eth.Contract(contractABI, contractAddress);
+    ethGoals.setProvider(window.ethereum);
 
+    // document.getElementById("userGoalsDropDown").options.selectedIndex
+    var userGoals = document.getElementById("userGoalsDropDown");
+
+    var goalId = parseInt(userGoals.options[userGoals.options.selectedIndex].value);
+    console.log(goalId);
+
+    if (goalId > 0)
+    {
+        buttonSpinner(true, "submitGoalCompletion", "submitGoalCompletionSpinner");
+
+        ethGoals.methods.markGoalAsComplete(goalId).send({from: ethereum.selectedAddress}).then(tx => {
+            console.log(tx);
+
+            updateAlert(`Goal completed! <a href="https://ropsten.etherscan.io/tx/${tx.transactionHash}" target="_blank">View Tx</a>`, "success")
+            console.log(`Tx: ${JSON.stringify(tx)}`);
+
+            buttonSpinner(false, "submitGoalCompletion", "submitGoalCompletionSpinner");
+            toggleGoalListForm(true);
+
+        }).catch(e => {
+            if (e.code === 4001){
+                buttonSpinner(false, "submitGoalCompletion", "submitGoalCompletionSpinner");
+            }
+            else
+            {
+                console.log(e);
+
+                //Parse out just the JSON string from the error message (this is the tx object)
+                let err = JSON.parse(e.message.slice(e.message.indexOf('{')))
+                console.log(err);
+
+                updateAlert(`Goal could not be marked as complete! <a href="https://ropsten.etherscan.io/tx/${err.transactionHash}" target="_blank">View Tx</a>`, "danger")
+
+                buttonSpinner(false, "submitGoalCompletion", "submitGoalCompletionSpinner");
+            }
+        });
+    }
 }
 
-async function withdrawEth() {
+async function withdraw() {
+    var web3 = new Web3(window.ethereum);
+    const ethGoals = new web3.eth.Contract(contractABI, contractAddress);
+    ethGoals.setProvider(window.ethereum);
 
+    const ownerAddress = await ethGoals.methods.owner().call();
+    const withdrawableAmount = await ethGoals.methods.getAvailableWithdrawAmount().call({from: ethereum.selectedAddress});
+
+    console.log(ownerAddress);
+    console.log(withdrawableAmount);
+
+    if (ownerAddress.toLowerCase() == ethereum.selectedAddress.toLowerCase())
+    {
+        if (parseFloat(withdrawableAmount) > 0)
+        {
+            buttonSpinner(true, "withdrawEth", "withdrawEthSpinner");
+
+            await ethGoals.methods.withdraw().send({from: ethereum.selectedAddress}).then(tx => {
+                console.log(tx);
+
+                updateAlert(`ETH Withdrawn by contract owner! <a href="https://ropsten.etherscan.io/tx/${tx.transactionHash}" target="_blank">View Tx</a>`, "success")
+                console.log(`Tx: ${JSON.stringify(tx)}`);
+                
+                buttonSpinner(false, "withdrawEth", "withdrawEthSpinner");
+                toggleGoalListForm(true);
+
+            }).catch(e => {
+                if (e.code === 4001){
+                    buttonSpinner(false, "withdrawEth", "withdrawEthSpinner");
+                }
+                else if (e)
+                {
+                    console.log(e);
+
+                    //Parse out just the JSON string from the error message (this is the tx object)
+                    let err = JSON.parse(e.message.slice(e.message.indexOf('{')))
+                    console.log(err);   
+
+                    updateAlert(`ETH could not be withdrawn! <a href="https://ropsten.etherscan.io/tx/${err.transactionHash}" target="_blank">View Tx</a>`, "danger")
+
+                    buttonSpinner(false, "withdrawEth", "withdrawEthSpinner");
+                }
+            });;
+        }
+        else
+        {
+            updateAlert("There needs to be unlocked ETH in the wallet to withdraw!", "danger");
+        }
+    }
+    else
+    {
+        console.log("Only owner can withdraw!");
+    }
 }
 
 //#endregion
@@ -647,7 +792,5 @@ window.addEventListener('load', async () => {
         ethereum.on('accountsChanged', (accounts) => {
             connectWallet();
         });
-
-        getMyGoals();
     }
 });
