@@ -689,7 +689,7 @@ async function withdraw() {
                 console.log(`Tx: ${JSON.stringify(tx)}`);
                 
                 buttonSpinner(false, "withdrawEth", "withdrawEthSpinner");
-                toggleGoalListForm(true);
+                connectWallet();
 
             }).catch(e => {
                 if (e.code === 4001){
