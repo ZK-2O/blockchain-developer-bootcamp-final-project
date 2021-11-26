@@ -1,17 +1,45 @@
-# Final Project Idea - Goal Setting dApp
+# Final Project - Goal Setting dApp
 
-## The Idea
+## Deployed App URL
+https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
 
-A user can set goals for themselves with a timeline to achieve them. The user also deposits a certain amount of ETH with their goal. This amount is tied to their goal. Upon completing the goal in time, the user will get their original ETH deposit back.
+## Screencast
 
-## Purpose
 
-The purpose of this project is to allow users to set goals with monetary value attached to them. According to research, losing an amount of money has a much greater impact gaining the same amount of money - this is known as Loss Aversion (https://thedecisionlab.com/biases/loss-aversion/). That is to say, the potential loss of money can be a good motivator to achieve one's own goals.
-As such, a user would send some ETH with their goals. If the user completes their goal in time, they get the full ETH deposit back.
+## Compiling and Running Tests Locally
 
-If the user does not complete the goal in time, they only get 50% of their deposit back. The remaining 50% is kept in the contract. This 50% could either be claimed by the contract owner, or if this app has a governance token, the token holders may get this amount distributed to them in proportion to their token holdings.
+### Prerequisites
 
-## Stretch Goals
+- Node.js v. 14 or higher
+- Truffle v.5.4.12 or higher
+- Ganache v2.5.4 or higher (if wanting to interact with a local instance)
+
+#### Libraries and Dependencies
+
+- Openzeppelin Contracts: `npm install @openzeppelin/contracts`
+
+
+## About the Project
+The purpose of this project is to allow users to set goals with monetary value attached to them, which the users risk losing if they do not achieve their goal in time. Losing an amount of money has a much greater impact gaining the same amount of money - this is known as Loss Aversion (https://thedecisionlab.com/biases/loss-aversion/). That is to say, the potential loss of money can be a good motivator to achieve one's own goals.
+
+If the user does not complete the goal in time, they only get 50% of their deposit back. The remaining 50% is kept in the contract. Whatever amount of ETH is in the contract (and not currently tied to any goals) can be withdrawn by the contract owner.
+
+### Workflow
+
+1. User adds a goal with an ETH deposit associated with it and assigns a deadline to the goal
+2. User works on achieving that goal
+3. User marks the goal as completed
+  + If the user completed the goal before the deadline, they receive the full deposit amount back
+  + If the user completed the goal after the deadline, they receive only 50% of the amount back
+
+### Considerations
+
+* A user should not be able to see the goals of other users on the front-end
+* A user should not be able to update the status of another user's goals
+	+ Of course, since all goals are stored on chain, technically anyone can see anyone else's goals. But this should not be the case on the front-end
+* A user must supply a minimum of 0.01 eth with their goal
+
+### Stretch Goals
 
 * A user can add an "accountability buddy" that would have to sign a tx verifying that the user did in fact complete their goal - then and only then would the user get their original deposit back
 * Allow other users to contribute amounts to your goal. For example, parents sending ETH to their kid's goal so when the kid completes the goal, the kid gets the total goal amount added to their wallet.
@@ -21,28 +49,13 @@ If the user does not complete the goal in time, they only get 50% of their depos
 * Ability to allow users to deposit any ERC-20 token for their goals
 * Adding a governance token to this so that all the things a contract owner would perform would have to be performed through governance votes, thus introducing decentralization in the way the app functions
 
-## User Flow
-
-1. User adds a goal with an ETH deposit associated with it and assigns a deadline to the goal
-2. User works on achieving that goal (obviously this happens in the real world)
-3. User marks the goal as completed
-  + If the user completed the goal before the deadline, they receive the full deposit amount back
-  + If the user completed the goal after the deadline, they receive only 50% of the amount back
-
-## To Consider
-
-* A user should not be able to update the status of another user's goals
-* A user should not be able to see the goals of other users on the front-end
-	+ Of course, since all goals are stored on chain, technically anyone can see anyone else's goals. But this should not be the case on the front-end
-* A user must supply a minimum x amount of eth with their goal
-
 
 -------------
 -------------
 -------------
 
 
-# Previous Ideas
+# Previous Ideas - Please ignore
 ## Idea 1 - File Integrity Monitor
 
 ### The Problem
