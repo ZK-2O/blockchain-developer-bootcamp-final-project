@@ -363,9 +363,9 @@ async function toggleGoalListForm(show) {
     
     if (show)
     {
-        removeGoalList();
+        await removeGoalList();
         goalListForm.classList.remove("collapse");
-        getMyGoals();
+        await getMyGoals();
         
     }
     else
@@ -423,8 +423,7 @@ async function updateConnectionStatus(connect) {
 
     if (connect)
     {
-        let web3 = new Web3(window.ethereum);
-        let bal = parseFloat(web3.utils.fromWei(await web3.eth.getBalance(ethereum.selectedAddress))).toFixed(2);
+        let bal = await getWalletBalance();
 
         console.log(`Selected address ${ethereum.selectedAddress}`);
         mmBtn.textContent = "Disconnect"
@@ -466,6 +465,14 @@ async function updateConnectionStatus(connect) {
     }
 }
 
+async function getWalletBalance()
+{
+    let web3 = new Web3(window.ethereum);
+    let bal = parseFloat(web3.utils.fromWei(await web3.eth.getBalance(ethereum.selectedAddress))).toFixed(2);
+
+    return bal;
+}
+
 function buttonSpinner(enable, buttonId, spinnerId) {
     let btn = document.getElementById(buttonId);
     let spinner = document.getElementById(spinnerId);
@@ -491,14 +498,6 @@ function getEpochTime(num) {
 
     let deadline = this.document.getElementById("deadline");
     deadline.value = epochTime;
-}
-
-function resetAllFields()
-{
-    //This function should reset all fields on the page
-    document.getElementById("addGoalFormElement").reset();
-    document.getElementById("GoalListForm").reset();
-    //removeGoalList();
 }
 
 async function removeGoalList() {
@@ -576,7 +575,7 @@ async function submitNewGoal() {
     let deadline = parseInt(document.getElementById('deadline').value.trim());
     let ethAmount = document.getElementById('ethAmount').value.trim();
 
-    if (validateSubmitGoalParameters(goalDescription, deadline, ethAmount))
+    if (validateSubmitGoalParameters())
     {
         buttonSpinner(true, "submitGoal", "submitGoalSpinner");
 
@@ -586,9 +585,10 @@ async function submitNewGoal() {
             updateAlert(`Goal Submitted! <a href="https://ropsten.etherscan.io/tx/${tx.transactionHash}" target="_blank">View Tx</a>`, "success")
             console.log(`Tx: ${JSON.stringify(tx)}`);
             
-            resetAllFields();
             buttonSpinner(false, "submitGoal", "submitGoalSpinner");
 
+            document.getElementById("addGoalFormElement").reset();
+            connectWallet();            
         }).catch(e => {
             if (e.code === 4001){
                 buttonSpinner(false, "submitGoal", "submitGoalSpinner");
@@ -605,8 +605,13 @@ async function submitNewGoal() {
 
                 buttonSpinner(false, "submitGoal", "submitGoalSpinner");
             }
-       });;
+       });
 
+    //    toggleAddGoalForm(true);
+    //    toggleGoalListForm(true);
+    //    toggleAdminForm(true);
+        // connectWallet();
+        
     }
     else
     {
@@ -625,7 +630,7 @@ async function markGoalComplete() {
     var goalId = parseInt(userGoals.options[userGoals.options.selectedIndex].value);
     console.log(goalId);
 
-    if (goalId > 0)
+    if (validateGoalCompletionForm())
     {
         buttonSpinner(true, "submitGoalCompletion", "submitGoalCompletionSpinner");
 
@@ -636,7 +641,8 @@ async function markGoalComplete() {
             console.log(`Tx: ${JSON.stringify(tx)}`);
 
             buttonSpinner(false, "submitGoalCompletion", "submitGoalCompletionSpinner");
-            toggleGoalListForm(true);
+            //toggleGoalListForm(true);
+            connectWallet();
 
         }).catch(e => {
             if (e.code === 4001){
@@ -664,13 +670,14 @@ async function withdraw() {
     ethGoals.setProvider(window.ethereum);
 
     const ownerAddress = await ethGoals.methods.owner().call();
-    const withdrawableAmount = await ethGoals.methods.getAvailableWithdrawAmount().call({from: ethereum.selectedAddress});
-
     console.log(ownerAddress);
-    console.log(withdrawableAmount);
 
     if (ownerAddress.toLowerCase() == ethereum.selectedAddress.toLowerCase())
     {
+        const withdrawableAmount = await ethGoals.methods.getAvailableWithdrawAmount().call({from: ethereum.selectedAddress});
+
+        console.log(withdrawableAmount);
+
         if (parseFloat(withdrawableAmount) > 0)
         {
             buttonSpinner(true, "withdrawEth", "withdrawEthSpinner");
@@ -709,6 +716,7 @@ async function withdraw() {
     }
     else
     {
+        updateAlert("Only the owner can withdraw ETH!", "danger");
         console.log("Only owner can withdraw!");
     }
 }
@@ -717,7 +725,7 @@ async function withdraw() {
 
 //#region Validation Functions
 
-function validateSubmitGoalParameters(_description, _deadline, _ethAmount) {
+function validateSubmitGoalParameters() {
     let goalDescription = document.getElementById('goalDescription');
     let deadline = document.getElementById('deadline');
     let ethAmount = document.getElementById('ethAmount');
@@ -725,8 +733,6 @@ function validateSubmitGoalParameters(_description, _deadline, _ethAmount) {
     let goalDescriptionFB = document.getElementById('goalDescriptionFeedback');
     let deadlineFB = document.getElementById('deadlineFeedback');
     let ethAmountFB = document.getElementById('ethAmountFeedback');
-
-    let addGoalFormElement = document.getElementById('addGoalFormElement');
 
     let epochTime = parseInt(new Date().getTime() / 1000);
     let returnVal = true;
@@ -761,8 +767,23 @@ function validateSubmitGoalParameters(_description, _deadline, _ethAmount) {
         ethAmountFB.style.display = 'none';
     }
 
+    return returnVal;
+}
 
-    //addGoalFormElement.classList.add('was-validated');
+function validateGoalCompletionForm() {
+    let selectedGoal = document.getElementById('userGoalsDropDown');
+    let selectedGoalFB = document.getElementById('userGoalsDropDownFeedback');
+    let returnVal = true;
+
+    if (selectedGoal.value.trim() != null && selectedGoal.value.trim() != "0")
+    {
+        selectedGoalFB.style.display = 'none';
+    }
+    else
+    {
+        selectedGoalFB.style.display = 'block';
+        returnVal = false;
+    }
 
     return returnVal;
 }
