@@ -30,7 +30,7 @@ https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
 
 
 ## About the Project
-The purpose of this project is to allow users to set goals with monetary value attached to them, which the users risk losing if they do not achieve their goal in time. Losing an amount of money has a much greater impact gaining the same amount of money - this is known as Loss Aversion (https://thedecisionlab.com/biases/loss-aversion/). That is to say, the potential loss of money can be a good motivator to achieve one's own goals.
+The purpose of this project is to allow users to set goals with monetary value attached to them, which the users risk losing if they do not achieve their goal in time. Losing an amount of money has a much greater impact than gaining the same amount of money - this is known as Loss Aversion (https://thedecisionlab.com/biases/loss-aversion/). That is to say, the potential loss of money can be a good motivator to achieve one's own goals.
 
 If the user does not complete the goal in time, they only get 50% of their deposit back. The remaining 50% is kept in the contract. Whatever amount of ETH is in the contract (and not currently tied to any goals) can be withdrawn by the contract owner.
 
