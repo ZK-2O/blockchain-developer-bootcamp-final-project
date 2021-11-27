@@ -6,7 +6,7 @@ Specific compiler pragma `0.8.0` used in contracts to avoid accidental bug inclu
 
 ## SWC-105 (Unprotected Ether Withdrawal)
 
-The `withdraw` function is protected with OpenZeppelin's `onlyOwner` modifier in the `Ownable`.
+The `withdraw` function is protected with OpenZeppelin's `onlyOwner` modifier in the `Ownable` contract.
 
 ## SWC-104 (Unchecked Call Return Value)
 
@@ -15,7 +15,6 @@ The `markGoalAsComplete` function and `withdraw` function both require the retur
 ## SWC-111 (Use of Deprecated Solidity Functions)
 
 No use of deprecated Solidity Functions in this project
-
 
 ## Modifiers used only for validation
 

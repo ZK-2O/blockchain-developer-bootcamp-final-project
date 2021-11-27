@@ -12,11 +12,22 @@ https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
 
 - Node.js v. 14 or higher
 - Truffle v.5.4.12 or higher
-- Ganache v2.5.4 or higher (if wanting to interact with a local instance)
 
 #### Libraries and Dependencies
 
 - Openzeppelin Contracts: `npm install @openzeppelin/contracts`
+- Truffle HDWallet Provider: `npm install @truffle/hdwallet-provider`
+- Dotenv: `npm install dotenv`
+
+
+#### Optional - only for running and interacting with local instance
+- Ganache v2.5.4 or higher
+- Ganache server running on port `7545`
+- .env file in the project root directory containing the following (with the values populated)
+  
+  `INFURA_API_KEY=""`
+  `ROPSTEN_MNEMONIC=""`
+
 
 
 ## About the Project

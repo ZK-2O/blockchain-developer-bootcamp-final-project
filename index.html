@@ -57,7 +57,7 @@
               </div>
               <div class="mb-3">
                 <label for="goalDescription" class="form-label">Goal Description</label>
-                <input type="text" class="form-control" id="goalDescription" required placeholder="Finish Consensys Bootcamp Final Project">
+                <input type="text" maxlength="50" class="form-control" id="goalDescription" required placeholder="Finish Consensys Bootcamp Final Project">
                 <div id="goalDescriptionFeedback" class="invalid-feedback">
                   Please provide a goal description
                 </div>
@@ -106,9 +106,10 @@
                 </h1>
               </div>
               <div class="mb-3">
-                <select id="userGoalsDropDown" class="form-select" aria-label="Default select example">
+                <select id="userGoalsDropDown" class="form-select" onchange="getGoalDeadline()" aria-label="Default select example">
                   <option value="0" selected>Select a goal</option>
                 </select>
+                <label id="deadlineDate"></label>
                 <div id="userGoalsDropDownFeedback" class="invalid-feedback">
                   Please select a goal
                 </div>

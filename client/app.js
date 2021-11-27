@@ -1,6 +1,7 @@
 //console.log("I'm here");
+//const contractAddress = "";
+const contractAddress = "0x57fcdfba5e18910f7d1f7eb38ddfff3088318d56";
 
-const contractAddress = "0xb69278ae3c2fa3a7a9c7879f2a58d0d73129b8b7";
 const contractABI = [
 	{
 		"inputs": [
@@ -263,7 +264,7 @@ function isMetamaskAvailable() {
 }
 
 function isCorrectChain() {
-    if (ethereum.chainId == "0x3")
+    if (ethereum.chainId == "0x3" || ethereum.chainId == "0x539")
     {
         return true;
     }
@@ -285,6 +286,7 @@ async function connectWallet() {
         }
 
         updateConnectionStatus(true);
+        resetDeadlineLabel();
 
         //Show the forms
         toggleAddGoalForm(true);
@@ -304,6 +306,7 @@ async function connectWallet() {
         }
 
         updateConnectionStatus(true);
+        resetDeadlineLabel();
         
         //Show the forms
         toggleAddGoalForm(true);
@@ -505,6 +508,11 @@ async function removeGoalList() {
     options.forEach(o => o.remove());
 }
 
+async function resetDeadlineLabel() {
+    var deadlineDate = document.getElementById("deadlineDate");
+    deadlineDate.innerText = "";
+}
+
 function enableToolTips() {
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
 
@@ -516,6 +524,32 @@ function enableToolTips() {
 //#endregion
 
 //#region Contract Interaction Functions
+
+async function getGoalDeadline() {
+    var web3 = new Web3(window.ethereum);
+    const ethGoals = new web3.eth.Contract(contractABI, contractAddress);
+    ethGoals.setProvider(window.ethereum);
+
+    var userGoalsDropDown = document.getElementById("userGoalsDropDown");
+    var deadlineDate = document.getElementById("deadlineDate");
+
+    if (parseInt(userGoalsDropDown.value) == 0)
+    {
+        deadlineDate.innerText = "";
+    }
+    else
+    {
+        var goalDetails = await ethGoals.methods.getMyGoalById(parseInt(userGoalsDropDown.value)).call({from: ethereum.selectedAddress});
+
+        if (!goalDetails.completed)
+        {
+            var tempDate = new Date(0); // The 0 there is the key, which sets the date to the epoch
+            tempDate.setUTCSeconds(goalDetails.deadline);
+
+            deadlineDate.innerHTML = `<b>Deadline:</b> ${tempDate.toLocaleDateString()} @ ${tempDate.toLocaleTimeString()}`;
+        }
+    }
+}
 
 async function getMyGoals() {
     var web3 = new Web3(window.ethereum);
@@ -544,9 +578,6 @@ async function getMyGoals() {
 
             if (!goalDetails.completed)
             {
-                var tempDate = new Date(0); // The 0 there is the key, which sets the date to the epoch
-                tempDate.setUTCSeconds(goalDetails.deadline);
-
                 var option = document.createElement('option');
 
                 if (i == 0)
