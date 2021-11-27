@@ -25,8 +25,8 @@ https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
 - Ganache server running on port `7545`
 - .env file in the project root directory containing the following (with the values populated)
   
-  `INFURA_API_KEY=""`
-  `ROPSTEN_MNEMONIC=""`
+`INFURA_API_KEY=""`
+`ROPSTEN_MNEMONIC=""`
 
 
 
