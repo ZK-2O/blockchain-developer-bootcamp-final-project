@@ -1,9 +1,11 @@
 # Final Project - Goal Setting dApp
 
 ## Deployed App URL
+
 https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
 
 ## Screencast
+
 
 
 ## Compiling and Running Tests Locally
@@ -21,11 +23,18 @@ https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
 
 
 #### Optional - only for running and interacting with local instance
+
 - Ganache v2.5.4 or higher
 - Ganache server running on port `7545`
+- Metamask connected to local instance with ChainID `1337`
+
+#### Optional - for migrating project to testnet using Truffle
+
 - .env file in the project root directory containing the following (with the values populated)
-    + `INFURA_API_KEY=""`
-    + `ROPSTEN_MNEMONIC=""`
+    ```
+    INFURA_API_KEY=""
+    ROPSTEN_MNEMONIC=""
+    ```
 
 
 
@@ -33,6 +42,15 @@ https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
 The purpose of this project is to allow users to set goals with monetary value attached to them, which the users risk losing if they do not achieve their goal in time. Losing an amount of money has a much greater impact than gaining the same amount of money - this is known as Loss Aversion (https://thedecisionlab.com/biases/loss-aversion/). That is to say, the potential loss of money can be a good motivator to achieve one's own goals.
 
 If the user does not complete the goal in time, they only get 50% of their deposit back. The remaining 50% is kept in the contract. Whatever amount of ETH is in the contract (and not currently tied to any goals) can be withdrawn by the contract owner.
+
+### Directory Structure
+
+- `./client/`: Contains the front-end's Javascript code
+- `./contracts/`: Contains the smart contract for the dApp
+- `./migrations/`: Contains the migration files for deploying contracts
+- `./test/`: Contains tests for the contracts
+- `./index.html`: Front-end HTML file
+- `.env`: .env file containing the mnemonic phrase and Infura key (used for migrating contract to testnet/mainnet)
 
 ### Workflow
 
@@ -51,6 +69,9 @@ If the user does not complete the goal in time, they only get 50% of their depos
 
 ### Stretch Goals
 
+* Improve the existing way of storing and retrieving goals
+  + The way it's done now is not the most efficient, requiring the client to make a call per goal for each user to get details.
+  + Solidity does not seem to have a way to return an array of Struct as a JSON object, but there could be a workaround.
 * A user can add an "accountability buddy" that would have to sign a tx verifying that the user did in fact complete their goal - then and only then would the user get their original deposit back
 * Allow other users to contribute amounts to your goal. For example, parents sending ETH to their kid's goal so when the kid completes the goal, the kid gets the total goal amount added to their wallet.
 * Contract owner should be able to update the minimum goal amount value. Ex. each user must deposit at least 0.02 ETH per goal
@@ -59,6 +80,10 @@ If the user does not complete the goal in time, they only get 50% of their depos
 * Ability to allow users to deposit any ERC-20 token for their goals
 * Adding a governance token to this so that all the things a contract owner would perform would have to be performed through governance votes, thus introducing decentralization in the way the app functions
 
+
+## Public Ethereum Address (for NFT certification)
+
+`0x2bB50f9beBa1F0A69190F16Cc5b1a15b83FC5431`
 
 -------------
 -------------
