@@ -22,10 +22,10 @@ https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
 - Dotenv: `npm install dotenv`
 
 
-#### Optional - only for running and interacting with local instance
+#### For running and interacting with local instance
 
 - Ganache v2.5.4 or higher
-- Ganache server running on port `7545`
+- Ganache server running on port `7545` and NetworkID `1337`
 - Metamask connected to local instance with ChainID `1337`
 
 #### Optional - for migrating project to testnet using Truffle
@@ -35,8 +35,6 @@ https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
     INFURA_API_KEY=""
     ROPSTEN_MNEMONIC=""
     ```
-
-
 
 ## About the Project
 The purpose of this project is to allow users to set goals with monetary value attached to them, which the users risk losing if they do not achieve their goal in time. Losing an amount of money has a much greater impact than gaining the same amount of money - this is known as Loss Aversion (https://thedecisionlab.com/biases/loss-aversion/). That is to say, the potential loss of money can be a good motivator to achieve one's own goals.
