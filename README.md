@@ -28,7 +28,7 @@ https://tinyurl.com/ycktawuz
 - Ganache server running on port `7545` and NetworkID `1337`
 - Metamask connected to local instance with ChainID `1337`
 
-*NOTE*: Before running truffle test, make sure Ganache is running with the above settings
+**NOTE**: Before running truffle test, make sure to open a workspace with this project in Ganache (or similar Ethereum client) using the settings above
 
 #### Optional - for migrating project to testnet using Truffle
 
