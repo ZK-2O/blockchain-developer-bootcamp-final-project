@@ -22,11 +22,13 @@ https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
 - Dotenv: `npm install dotenv`
 
 
-#### For running and interacting with local instance
+#### For running, testing, and interacting with local instance
 
 - Ganache v2.5.4 or higher
 - Ganache server running on port `7545` and NetworkID `1337`
 - Metamask connected to local instance with ChainID `1337`
+
+*NOTE*: Before running truffle test, make sure Ganache is running with the above settings
 
 #### Optional - for migrating project to testnet using Truffle
 
@@ -47,6 +49,7 @@ If the user does not complete the goal in time, they only get 50% of their depos
 - `./contracts/`: Contains the smart contract for the dApp
 - `./migrations/`: Contains the migration files for deploying contracts
 - `./test/`: Contains tests for the contracts
+- `./screencast/`: Contains the screencast for this project
 - `./index.html`: Front-end HTML file
 - `.env`: .env file containing the mnemonic phrase and Infura key (used for migrating contract to testnet/mainnet)
 
