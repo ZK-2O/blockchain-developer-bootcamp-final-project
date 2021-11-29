@@ -49,7 +49,6 @@ If the user does not complete the goal in time, they only get 50% of their depos
 - `./contracts/`: Contains the smart contract for the dApp
 - `./migrations/`: Contains the migration files for deploying contracts
 - `./test/`: Contains tests for the contracts
-- `./screencast/`: Contains the screencast for this project
 - `./index.html`: Front-end HTML file
 - `.env`: .env file containing the mnemonic phrase and Infura key (used for migrating contract to testnet/mainnet)
 
