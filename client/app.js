@@ -564,13 +564,14 @@ async function getMyGoals() {
 
         for(var i = 0; i <= myGoals.length; i++) 
         {
-            if (i == 0)
+            if (i == 0 && userGoalsDropDown.value !== "0")
             {
                 var option = document.createElement('option');
 
                 option.text = "Select a goal"
                 option.value = 0;
                 userGoalsDropDown.add(option);
+                //console.log("Added goal value");
                 continue;
             }
             
@@ -580,18 +581,9 @@ async function getMyGoals() {
             {
                 var option = document.createElement('option');
 
-                if (i == 0)
-                {
-                    option.text = "Select a goal"
-                    option.value = 0;
-                    userGoalsDropDown.add(option);
-                }
-                else
-                {
-                    option.text = `${goalDetails.description} (${parseFloat(web3.utils.fromWei(goalDetails.amount)).toFixed(3)} ETH)`;
-                    option.value = parseInt(myGoals[i - 1]);
-                    userGoalsDropDown.add(option);
-                }
+                option.text = `${goalDetails.description} (${parseFloat(web3.utils.fromWei(goalDetails.amount)).toFixed(3)} ETH)`;
+                option.value = parseInt(myGoals[i - 1]);
+                userGoalsDropDown.add(option);
             }
         }
     }
@@ -837,6 +829,8 @@ window.addEventListener('load', async () => {
     }
     else
     {
+        removeGoalList();
+
         ethereum.on('chainChanged', (chainId) => {
             window.location.reload();
         });
