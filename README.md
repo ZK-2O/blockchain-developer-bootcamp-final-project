@@ -45,7 +45,7 @@ If the user does not complete the goal in time, they only get 50% of their depos
 
 ### Directory Structure
 
-- `./client/`: Contains the front-end's Javascript code
+- `./client/`: Contains the front-end's Javascript code and other assets
 - `./contracts/`: Contains the smart contract for the dApp
 - `./migrations/`: Contains the migration files for deploying contracts
 - `./test/`: Contains tests for the contracts
