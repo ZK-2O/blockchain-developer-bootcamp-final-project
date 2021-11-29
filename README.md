@@ -6,7 +6,7 @@ https://zk-2o.github.io/blockchain-developer-bootcamp-final-project/
 
 ## Screencast
 
-
+https://tinyurl.com/ycktawuz
 
 ## Compiling and Running Tests Locally
 
